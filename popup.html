@@ -3,14 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Extension</title>
+  <title>Oulipify</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main class="panel">
-    <h1 class="title">My Extension</h1>
-    <p class="hint">Click below to rewrite page text with synonyms.</p>
-    <button type="button" id="synonymize" class="btn">Synonymize this page</button>
+    <h1 class="title">Oulipify</h1>
+    <p class="hint">Choose an Oulipian rewrite rule, then apply it to this page.</p>
+    <label class="label" for="rule">Rule</label>
+    <select id="rule" class="field">
+      <option value="synonymize">Synonymize</option>
+      <option value="prisoners_constraint">Prisoner's Constraint (Macao)</option>
+      <option value="n_plus_7">N+7</option>
+      <option value="lipogram">Lipogram</option>
+    </select>
+    <label class="label" for="lipogramLetters">Lipogram letters (optional)</label>
+    <input
+      id="lipogramLetters"
+      class="field"
+      type="text"
+      placeholder="e.g. e or ae"
+      maxlength="26"
+      autocomplete="off"
+      aria-describedby="lipogramHelp"
+    >
+    <p id="lipogramHelp" class="help">Used only for Lipogram. Leave blank to omit "e".</p>
+    <button type="button" id="applyRule" class="btn">Apply</button>
+    <button type="button" id="resetPage" class="btn">Reset</button>
     <p id="status" class="status" aria-live="polite"></p>
   </main>
   <script src="popup.js"></script>

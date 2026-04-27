@@ -1,0 +1,11 @@
+Instructions
+- Use vanilla JavaScript only. No frameworks, no libraries unless I ask.
+- Write clean, readable code with comments explaining what each section does.
+- Keep HTML, CSS, and JS in separate files.
+- Break out JS into clean functions and separate files as needed.
+- Do not duplicate logic
+- When you make a change, explain what you changed and why.
+- If you're unsure about something, say so rather than guessing.
+- Don't refactor code I didn't ask you to refactor.
+- Prefer simple solutions over celver ones.
+- Anytime you want to bring in an external library or dependence, ask me first.

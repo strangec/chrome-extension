@@ -5,7 +5,8 @@ chrome.runtime.onInstalled.addListener(() => {
 const synonymCache = new Map();
 
 async function fetchFirstSynonym(word) {
-  const key = word.toLowerCase();
+  const key = String(word ?? "").toLowerCase();
+  if (!key) return null;
   if (synonymCache.has(key)) return synonymCache.get(key);
 
   try {
@@ -13,21 +14,52 @@ async function fetchFirstSynonym(word) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Datamuse HTTP ${res.status}`);
     const data = await res.json();
-    const syn = Array.isArray(data) && data[0]?.word ? String(data[0].word) : null;
-    synonymCache.set(key, syn);
-    return syn;
-  } catch (_e) {
+    const synonym = Array.isArray(data) && data[0]?.word ? String(data[0].word) : null;
+    synonymCache.set(key, synonym);
+    return synonym;
+  } catch (_error) {
     synonymCache.set(key, null);
     return null;
   }
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "SYNONYMIZE_ACTIVE_TAB") {
+  if (message?.type === "RESET_ACTIVE_TAB") {
     (async () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) {
         sendResponse({ ok: false, error: "No active tab." });
+        return;
+      }
+      try {
+        await chrome.tabs.reload(tab.id);
+        sendResponse({ ok: true });
+      } catch (e) {
+        sendResponse({ ok: false, error: e?.message ?? String(e) });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "APPLY_RULE_ACTIVE_TAB") {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) {
+        sendResponse({ ok: false, error: "No active tab." });
+        return;
+      }
+
+      const url = String(tab.url ?? "");
+      const isRestrictedUrl =
+        url.startsWith("chrome://") ||
+        url.startsWith("chrome-extension://") ||
+        url.startsWith("about:") ||
+        url.startsWith("view-source:");
+      if (isRestrictedUrl) {
+        sendResponse({
+          ok: false,
+          error: "Chrome blocks extensions on this page. Open a regular website (https://...) and try again.",
+        });
         return;
       }
 
@@ -37,8 +69,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           files: ["content.js"],
         });
 
-        await chrome.tabs.sendMessage(tab.id, { type: "RUN_SYNONYMIZE" });
-        sendResponse({ ok: true });
+        const runRes = await chrome.tabs.sendMessage(tab.id, {
+          type: "RUN_OULIPO",
+          rule: message?.rule,
+          lipogramLetters: message?.lipogramLetters,
+        });
+        if (runRes?.ok) {
+          sendResponse({ ok: true });
+          return;
+        }
+        sendResponse({ ok: false, error: runRes?.error ?? "Rule application failed." });
       } catch (e) {
         sendResponse({ ok: false, error: e?.message ?? String(e) });
       }
@@ -49,16 +89,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "LOOKUP_SYNONYMS") {
     (async () => {
       const words = Array.isArray(message?.words) ? message.words : [];
-      const out = {};
-
-      for (const w of words) {
-        if (typeof w !== "string") continue;
-        if (!w || w.length > 50) continue;
-        const syn = await fetchFirstSynonym(w);
-        if (syn) out[w] = syn;
+      const synonyms = {};
+      for (const word of words) {
+        if (typeof word !== "string") continue;
+        if (!word || word.length > 50) continue;
+        const synonym = await fetchFirstSynonym(word);
+        if (synonym) synonyms[word.toLowerCase()] = synonym;
       }
-
-      sendResponse({ ok: true, synonyms: out });
+      sendResponse({ ok: true, synonyms });
     })();
     return true;
   }
