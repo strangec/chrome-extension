@@ -2,6 +2,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  outline: none;
+}
+
 body {
   margin: 0;
   min-width: 280px;
