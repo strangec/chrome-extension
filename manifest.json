@@ -7,8 +7,11 @@
   "host_permissions": ["https://api.datamuse.com/*"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Oulipify"
+    "default_title": "Illiterature Machine"
   },
+  "icons":{
+    "16":"assets/icon16.png",
+  }
   "background": {
     "service_worker": "background.js"
   }
